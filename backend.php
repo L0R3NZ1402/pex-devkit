@@ -1,15 +1,15 @@
 <?php
 //MARK
 header("Content-Type: application/json");
-$keyword = isset($_GET['keyword']) ? $_GET['keyword'] : "";
+$input = json_decode(file_get_contents("php://input"), true);
+$keyword = $input['keyword'];
+$params = $input['params'];
 //MARK
-?>
 
-<?php
 // Database config
 $host = "localhost";
-$db = "lumaframework";
-$user = "root";
+$db = "";
+$user = "";
 $pass = "";
 $charset = "utf8mb4";
 
@@ -25,28 +25,26 @@ try {
 
     // Example query (fetch all users)
     switch ($keyword) {
-        case 'GetItems':
-            $query = 'SELECT * FROM items';
-            $data = Get($query, $pdo);
-            $response = [
-                "status" => "Success",
-                "data" => $data
-            ];
-            echo json_encode($response);
-            break;
+        // case 'GetItems':
+        //     $query = 'SELECT * FROM items';
+        //     $result = Get($query, $params, $pdo);
+        //     echo json_encode($result);
+        //     break;
 
-        case 'InsertItems':
-            $params = json_decode(file_get_contents("php://input"), true);
-            $query = "INSERT INTO items (item, qty) VALUES (:item, :qty)";
-            $result = Set($query, $params, $pdo);
+        // case 'InsertItems':
+        //     $query = "INSERT INTO items (item, qty) VALUES (:item, :qty)";
+        //     $result = Set($query, $params, $pdo);
 
-            echo json_encode($result);
-            break;
+        //     echo json_encode($result);
+        //     break;
+
+
 
         default:
             $response = [
                 "status" => 'Failed',
-                "message" => 'No Keyword Found'
+                "message" => 'No Keyword Found',
+                "keyword" => $keyword
             ];
             echo json_encode($response);
             break;
@@ -60,7 +58,6 @@ try {
     echo json_encode($response);
 }
 
-?>
 
 
 
@@ -78,14 +75,36 @@ try {
 
 
 
-<?php
 //MARK
-function Get($query, $pdo)
+function Get($query, $params = [], $pdo)
 {
-    $stmt = $pdo->query("SELECT * FROM items");
-    $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare($query);
 
-    return $row;
+        // If params are passed, bind them, otherwise just execute
+        $success = !empty($params) ? $stmt->execute($params) : $stmt->execute();
+
+        if ($success) {
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                "status" => "Success",
+                "data" => $rows,
+                "rowCount" => count($rows)
+            ];
+        } else {
+            return [
+                "status" => "Failed",
+                "data" => [],
+                "rowCount" => 0
+            ];
+        }
+    } catch (PDOException $e) {
+        return [
+            "status" => "Error",
+            "message" => $e->getMessage()
+        ];
+    }
 }
 
 function Set($query, $params = [], $pdo)
