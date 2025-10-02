@@ -15,3 +15,5 @@ Features:
 
 Perfect for developers who want to kickstart projects quickly 
 without repeating the same boilerplate setup.
+
+git clone https://github.com/L0R3NZ1402/pex-devkit.git
